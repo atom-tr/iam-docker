@@ -1,0 +1,3 @@
+[submodule "iam2/base"]
+	path = iam2/base
+	url = https://github.com/atom-tr/iam-base.git
