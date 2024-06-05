@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+    
+    iam:
+      image: iam2:latest
+      build:
+        context: ./iam2
+        dockerfile: Dockerfile
+      entrypoint: python manage.py
+      networks: [iam]
+      volumes:
+          - ./iam2:/app/
+          - static:/public/
+          - ./logs:/var/log/
+      depends_on: [db]
+      restart: always # start on startup
+    
+    daphne:
+      extends: iam
+      command: daphne --access-log /var/log/iam.daphne.log iam2.asgi:application
+
+    cron:
+      extends: iam
+      command: ["cron", "-f"]
+
+    db:
+        image: mariadb
+        container_name: mariadb
+        environment:
+            - TZ=${TZ}
+            - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1
+            - MARIADB_USER=${DB_USER}
+            - MARIADB_PASSWORD=${DB_PASS}
+            - MARIADB_DATABASE=${DB_NAME}
+        volumes:
+            - ./contrib/db/mariadb-data:/var/lib/mysql:Z
+        networks: [iam]
+        restart: always
+
+    nginx:
+        image: nginx:alpine
+        environment:
+            - DOMAIN
+            - TZ=${TZ}
+        ports:
+            - 8080:80
+        volumes:
+            - ./contrib/nginx/templates:/etc/nginx/templates:ro
+            - static:/public/
+            - ./docs/assets:/public/doc_assets/
+            - ./logs:/var/log/nginx
+        networks: [iam]
+        restart: always
+
+volumes:
+  static:
+    name: iam_staticfiles
+
+networks:
+    iam:
+        name: iam_bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 172.20.0.0/24

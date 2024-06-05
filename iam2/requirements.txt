@@ -1,0 +1,45 @@
+# Core packages
+## Django >=4.1 for Asynchronous Support
+Django>=4.1
+docutils
+## Python standard for web servers and applications 
+gunicorn
+## Python standard for asynchronous web servers 
+## and applications
+daphne
+channels
+numpy
+## Check valid PMS request
+lxml
+## For django load yaml fixture file
+pyyaml
+## Django MySQL support
+mysql-connector-python
+sqlparse
+# App packages
+## Active De
+django-python3-ldap
+## Blocks people from brute forcing login attempts
+##  https://github.com/jazzband/django-defender
+# django-defender
+
+## Mikrotik API 
+RouterOS-api
+backports.zoneinfo;python_version<"3.9"
+
+# Requests for API
+requests
+
+# Collection of common interactive command line user interfaces
+inquirer
+
+# Constance - Dynamic Django settings
+# https://github.com/jazzband/django-constance
+django-constance[database]==3.1.0
+django-picklefield
+#django-crontab
+redis
+# https://github.com/labd/django-healthchecks
+django_healthchecks
+#unidecode
+unidecode
