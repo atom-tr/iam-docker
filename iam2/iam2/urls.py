@@ -14,12 +14,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include, re_path
-from base import views
+from django.urls import path, include
 
+from base.ews.urls import urlpatterns as base_patterns
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('healthchecks/', include('django_healthchecks.urls')),
-    path('', include('base.ews.urls')),
-    re_path(r'^test/(?:(?P<key>\w+)/)?$', views.test),
 ]
+
+# Use base views to cover undefined views
+for pattern in base_patterns:
+    if pattern not in urlpatterns:
+        urlpatterns.append(pattern)

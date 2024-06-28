@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 """
 import os
 from pathlib import Path
+import importlib
+from django.db.backends.utils import CursorWrapper
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +27,7 @@ SECRET_KEY = 'django-insecure-7phbmbrcmdkuibykn@%_4=6o6)kbyti!3+94u17zq5zdg)ek!v
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['testserver']
+ALLOWED_HOSTS = ['testserver', '119.17.252.11']
 
 
 # Application definition
@@ -39,7 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'constance',
     # IAM base app
-    'base',
+    'base.ews',
     'base.accesscontrol',
     'base.QoS',
     'base.history',
@@ -90,6 +92,24 @@ DATABASES = {
 }
 
 
+for name, config in DATABASES.items():
+    """SQL automatic reconnect"""
+    module = importlib.import_module(config["ENGINE"] + ".base")
+
+    def ensure_connection(self):
+        if self.connection is not None:
+            try:
+                with CursorWrapper(self.create_cursor(), self) as cursor:
+                    cursor.execute("SELECT 1")
+                return
+            except Exception:
+                pass
+
+        with self.wrap_database_errors:
+            self.connect()
+
+    module.DatabaseWrapper.ensure_connection = ensure_connection
+    
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 
@@ -125,6 +145,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/4.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+   os.path.join(BASE_DIR, "static"),
+   os.path.join(BASE_DIR, "base/static"),
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
@@ -139,7 +163,7 @@ LOGGING = {
     'disable_existing_loggers': False,
     'formatters': {
         'simple': {
-            'format': '{asctime} {levelname} {module} {lineno}\t>> {message}',
+            'format': '{asctime} {levelname} {module}\t>> {message}',
             'style': '{',
         },
         'simpler': {
@@ -147,15 +171,31 @@ LOGGING = {
             'style': '{',
         },
     },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'exception_only': {
+            '()': 'base.utils.logging.ExceptionOnlyFilter'
+        },
+        'exclude_static_files': {
+            '()': 'base.utils.logging.ExcludeStaticFilesFilter',
+        },
+        'add_id': {
+            '()': 'base.utils.logging.IdFilter'
+        }
+    },
     'handlers': {
         'console': {
             'level': 'INFO',
             'class': 'logging.StreamHandler',
+            'filters': ['exclude_static_files'],
             'formatter': 'simpler'
         },
         'general': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
+            'filters': ['exclude_static_files'],
             'filename': os.path.join(LOG_DIR, 'iam2.log'),
             'formatter': 'simple',
         },
